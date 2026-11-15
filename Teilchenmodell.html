@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Teilchenmodell Klasse 8</title>
+<style>
+body { font-family: sans-serif; background: #f1f5f9; color: #1e293b; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+.box { display: flex; flex-wrap: wrap; gap: 20px; max-width: 920px; justify-content: center; margin-top: 15px; }
+.card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+canvas { background: #e0f2fe; border: 3px solid #475569; border-top: none; border-radius: 0 0 10px 10px; display: block; }
+.controls { width: 350px; display: flex; flex-direction: column; gap: 15px; }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+button { padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+button.green { background: #10b981; color: #fff; border: none; }
+.info { background: #eff6ff; border-left: 4px solid #2563eb; padding: 12px; font-size: 0.9rem; line-height: 1.4; }
+.legend { display: flex; gap: 12px; margin-top: 10px; font-size: 0.85rem; flex-wrap: wrap; }
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+</style>
+</head>
+<body>
+<h2>Teilchenmodell und Stoffgemische (Klasse 8)</h2>
+<div class="box">
+  <div class="card">
+    <canvas id="c" width="420" height="380"></canvas>
+    <div class="legend" id="leg"></div>
+  </div>
+  <div class="card controls">
+    <div>
+      <strong>1. Alltagsphaenomen waehlen:</strong>
+      <div class="btns" style="margin-top:6px;">
+        <button id="b-sugar" class="active">Zucker in Wasser</button>
+        <button id="b-sand">Sand in Wasser</button>
+        <button id="b-ink">Tinte (Diffusion)</button>
+        <button id="b-mix">Wasser + Alkohol</button>
+      </div>
+    </div>
+    <div>
+      <strong>2. Temperatur: <span id="tVal">20 Grad C</span></strong>
+      <input type="range" id="temp" min="5" max="85" value="20" style="width:100%;">
+    </div>
+    <div>
+      <strong>3. Aktion:</strong>
+      <div class="btns" style="margin-top:6px;">
+        <button id="b-stir" class="green">Umruehren</button>
+        <button id="b-reset">Neu starten</button>
+      </div>
+    </div>
+    <div class="info" id="info">Warte auf Start...</div>
+  </div>
+</div>
+
+<script>
+window.onerror = function(msg, url, line) {
+  document.getElementById('info').innerHTML = '<b style="color:red;">Fehler in Zeile ' + line + ':</b> ' + msg;
+};
+
+var c = document.getElementById('c');
+var ctx = c.getContext('2d');
+var mode = 'sugar';
+var temp = 20;
+var parts = [];
+var stir = 0;
+var waterLevel = 50;
+
+document.getElementById('b-sugar').onclick = function() { setMode('sugar'); };
+document.getElementById('b-sand').onclick = function() { setMode('sand'); };
+document.getElementById('b-ink').onclick = function() { setMode('ink'); };
+document.getElementById('b-mix').onclick = function() { setMode('mix'); };
+document.getElementById('b-stir').onclick = function() { stir = 55; };
+document.getElementById('b-reset').onclick = function() { init(); };
+document.getElementById('temp').oninput = function() {
+  temp = Number(this.value);
+  document.getElementById('tVal').innerText = temp + ' Grad C';
+};
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('b-sugar').className = (m === 'sugar') ? 'active' : '';
+  document.getElementById('b-sand').className = (m === 'sand') ? 'active' : '';
+  document.getElementById('b-ink').className = (m === 'ink') ? 'active' : '';
+  document.getElementById('b-mix').className = (m === 'mix') ? 'active' : '';
+  init();
+}
+
+function rand(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function addPart(x, y, type, locked) {
+  var r = 6, col = '#38bdf8', m = 1;
+  if (type === 's') { r = 8; col = '#f59e0b'; m = 2.5; }
+  if (type === 'i') { r = 6; col = '#9333ea'; m = 1.2; }
+  if (type === 'a') { r = 11; col = '#10b981'; m = 2; }
+  if (type === 'sand') { r = 10; col = '#92400e'; m = 6; }
+  var ang = Math.random() * 6.28;
+  var spd = (type === 'sand') ? 0 : (0.5 + temp / 25) / Math.sqrt(m);
+  parts.push({ x: x, y: y, type: type, locked: locked, r: r, col: col, m: m, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd });
+}
+
+function init() {
+  parts = [];
+  stir = 0;
+  waterLevel = 50;
+  if (mode === 'sugar') {
+    for (var i = 0; i < 180; i++) { addPart(rand(10, 410), rand(60, 240), 'w', false); }
+    for (var r = 0; r < 5; r++) {
+      for (var col = 0; col < 7; col++) {
+        addPart(155 + col * 18, 280 + r * 18, 's', true);
+      }
+    }
+  } else if (mode === 'sand') {
+    for (var i = 0; i < 180; i++) { addPart(rand(10, 410), rand(60, 310), 'w', false); }
+    for (var i = 0; i < 28; i++) { addPart(rand(40, 380), rand(335, 368), 'sand', false); }
+  } else if (mode === 'ink') {
+    for (var i = 0; i < 200; i++) { addPart(rand(10, 410), rand(60, 370), 'w', false); }
+    for (var i = 0; i < 45; i++) { addPart(210 + rand(-25, 25), 90 + rand(-25, 25), 'i', false); }
+  } else if (mode === 'mix') {
+    waterLevel = 40;
+    for (var i = 0; i < 110; i++) { addPart(rand(10, 410), rand(220, 370), 'w', false); }
+    for (var i = 0; i < 70; i++) { addPart(rand(10, 410), rand(50, 200), 'a', false); }
+  }
+  updateText();
+}
+
+function step() {
+  ctx.clearRect(0, 0, 420, 380);
+  if (stir > 0) { stir--; }
+  if (mode === 'mix' && waterLevel < 62) { waterLevel += 0.03; }
+
+  ctx.beginPath();
+  ctx.moveTo(0, waterLevel);
+  ctx.lineTo(420, waterLevel);
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    if (p.locked) {
+      p.x += rand(-0.3, 0.3);
+      p.y += rand(-0.3, 0.3);
+    } else if (p.type === 'sand') {
+      if (stir > 0) {
+        p.vx += rand(-0.8, 0.8);
+        p.vy -= rand(0.2, 0.9);
+      } else {
+        p.vy += 0.18;
+        p.vx *= 0.92;
+      }
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < p.r) { p.x = p.r; p.vx *= -0.5; }
+      if (p.x > 420 - p.r) { p.x = 420 - p.r; p.vx *= -0.5; }
+      if (p.y < waterLevel + p.r) { p.y = waterLevel + p.r; p.vy *= -0.5; }
+      if (p.y > 380 - p.r) { p.y = 380 - p.r; p.vy = 0; p.vx *= 0.7; }
+    } else {
+      var spd = (0.5 + temp / 25) / Math.sqrt(p.m);
+      var cur = Math.hypot(p.vx, p.vy) || 1;
+      p.vx = (p.vx / cur) * spd;
+      p.vy = (p.vy / cur) * spd;
+      if (stir > 0) {
+        p.vx += -(p.y - 200) * 0.02;
+        p.vy += (p.x - 210) * 0.02;
+      }
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < p.r) { p.x = p.r; p.vx *= -1; }
+      if (p.x > 420 - p.r) { p.x = 420 - p.r; p.vx *= -1; }
+      if (p.y < waterLevel + p.r) { p.y = waterLevel + p.r; p.vy *= -1; }
+      if (p.y > 380 - p.r) { p.y = 380 - p.r; p.vy *= -1; }
+    }
+
+    for (var j = i + 1; j < parts.length; j++) {
+      var q = parts[j];
+      var dx = q.x - p.x;
+      var dy = q.y - p.y;
+      var d = Math.hypot(dx, dy);
+      var minD = p.r + q.r;
+
+      if (d < minD && d > 0) {
+        var chance = 0.02 + temp / 1200 + (stir > 0 ? 0.1 : 0);
+        if (p.locked && q.type === 'w' && Math.random() < chance) { p.locked = false; }
+        if (q.locked && p.type === 'w' && Math.random() < chance) { q.locked = false; }
+
+        if (p.type === 'sand' && q.type === 'sand') {
+          var nx = dx / d, ny = dy / d, ov = (minD - d) * 0.5;
+          p.x -= nx * ov; p.y -= ny * ov;
+          q.x += nx * ov; q.y += ny * ov;
+        } else if (!p.locked && !q.locked && p.type !== 'sand' && q.type !== 'sand') {
+          var nx = dx / d, ny = dy / d, ov = (minD - d) * 0.5;
+          p.x -= nx * ov; p.y -= ny * ov;
+          q.x += nx * ov; q.y += ny * ov;
+          var tx = p.vx; p.vx = q.vx; q.vx = tx;
+          var ty = p.vy; p.vy = q.vy; q.vy = ty;
+        } else {
+          if (!p.locked && p.type !== 'sand') { p.vx *= -1; p.vy *= -1; }
+          if (!q.locked && q.type !== 'sand') { q.vx *= -1; q.vy *= -1; }
+        }
+      }
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, 6.28);
+    ctx.fillStyle = p.col;
+    ctx.fill();
+
+    if (p.type === 'sand') {
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(p.x - 3, p.y - 2, 2, 2);
+      ctx.fillRect(p.x + 2, p.y + 1, 2, 2);
+      ctx.fillRect(p.x - 1, p.y + 3, 2, 2);
+    }
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.stroke();
+  }
+  requestAnimationFrame(step);
+}
+
+function updateText() {
+  var leg = document.getElementById('leg');
+  var info = document.getElementById('info');
+  if (mode === 'sugar') {
+    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser</span><span><i class="dot" style="background:#f59e0b"></i>Zucker</span>';
+    info.innerHTML = '<b>Loesung (homogenes Gemisch):</b> Wasserteilchen loesen einzelne Zuckerteilchen heraus.';
+  } else if (mode === 'sand') {
+    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser</span><span><i class="dot" style="background:#92400e"></i>Sandkorn</span>';
+    info.innerHTML = '<b>Suspension (heterogenes Gemisch):</b> Sandteilchen bleiben verbunden und sinken nach dem Umruehren ab.';
+  } else if (mode === 'ink') {
+    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser</span><span><i class="dot" style="background:#9333ea"></i>Farbstoff</span>';
+    info.innerHTML = '<b>Diffusion:</b> Durch ihre Eigenbewegung verteilen sich Farbstoffteilchen gleichmaessig im Wasser.';
+  } else {
+    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser (klein)</span><span><i class="dot" style="background:#10b981"></i>Alkohol (gross)</span>';
+    info.innerHTML = '<b>Volumenkontraktion:</b> Kleine Wasserteilchen schieben sich in die Luecken zwischen den grossen Alkoholteilchen.';
+  }
+}
+
+init();
+step();
+</script>
+</body>
+</html>
