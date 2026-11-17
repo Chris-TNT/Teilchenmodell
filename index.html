@@ -2,241 +2,319 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Teilchenmodell Klasse 8</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Teilchenmodell: Lösen, Gefrieren und Volumenabnahme</title>
 <style>
-body { font-family: sans-serif; background: #f1f5f9; color: #1e293b; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-.box { display: flex; flex-wrap: wrap; gap: 20px; max-width: 920px; justify-content: center; margin-top: 15px; }
-.card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-canvas { background: #e0f2fe; border: 3px solid #475569; border-top: none; border-radius: 0 0 10px 10px; display: block; }
-.controls { width: 350px; display: flex; flex-direction: column; gap: 15px; }
-.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-button { padding: 9px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #f8fafc; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
-button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
-button.green { background: #10b981; color: #fff; border: none; }
-.info { background: #eff6ff; border-left: 4px solid #2563eb; padding: 12px; font-size: 0.9rem; line-height: 1.4; }
-.legend { display: flex; gap: 12px; margin-top: 10px; font-size: 0.85rem; flex-wrap: wrap; }
-.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:#f1f5f9;color:#1e293b;margin:0;padding:20px}
+main{max-width:1020px;margin:auto}h3{margin:0 0 8px}p{line-height:1.5}
+.layout{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.card{background:white;padding:18px;border-radius:12px;box-shadow:0 2px 9px #0001}
+.sim{flex:1;min-width:280px}.controls{width:365px;display:flex;flex-direction:column;gap:17px}
+canvas{display:block;width:100%;max-width:460px;height:auto;margin:auto;background:#f8fafc;border-radius:8px}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+button{padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:#f8fafc;cursor:pointer;font:inherit;font-size:.87rem;font-weight:600}
+button.active{background:#2563eb;color:white}
+button.green{background:#047857;color:white;touch-action:none;user-select:none}
+button.primary{background:#2563eb;color:white;width:100%;margin-top:10px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid #f59e0b;outline-offset:3px}
+.info,.note{padding:12px;border-radius:7px;font-size:.88rem;line-height:1.5}
+.info{background:#eff6ff;border-left:4px solid #2563eb}
+.note{background:#fff7ed;border-left:4px solid #c2410c}
+.legend{display:flex;gap:13px;flex-wrap:wrap;font-size:.85rem;margin-top:10px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px}
+small{display:block;font-size:.79rem;line-height:1.5;color:#475569;margin-top:7px}
+input{width:100%;margin-top:12px}
+#status{min-height:3em;font-size:.88rem;line-height:1.5;margin-top:12px}
+#mixPanel[hidden]{display:none}
+@media(max-width:750px){.controls{width:100%}}
 </style>
 </head>
 <body>
-<h2>Teilchenmodell und Stoffgemische (Klasse 8)</h2>
-<div class="box">
-  <div class="card">
-    <canvas id="c" width="420" height="380"></canvas>
-    <div class="legend" id="leg"></div>
-  </div>
-  <div class="card controls">
-    <div>
-      <strong>1. Alltagsphaenomen waehlen:</strong>
-      <div class="btns" style="margin-top:6px;">
-        <button id="b-sugar" class="active">Zucker in Wasser</button>
-        <button id="b-sand">Sand in Wasser</button>
-        <button id="b-ink">Tinte (Diffusion)</button>
-        <button id="b-mix">Wasser + Alkohol</button>
-      </div>
-    </div>
-    <div>
-      <strong>2. Temperatur: <span id="tVal">20 Grad C</span></strong>
-      <input type="range" id="temp" min="5" max="85" value="20" style="width:100%;">
-    </div>
-    <div>
-      <strong>3. Aktion:</strong>
-      <div class="btns" style="margin-top:6px;">
-        <button id="b-stir" class="green">Umruehren</button>
-        <button id="b-reset">Neu starten</button>
-      </div>
-    </div>
-    <div class="info" id="info">Warte auf Start...</div>
-  </div>
+<main>
+<h3>Teilchenmodell: Lösen, Mischen und Gefrieren</h3>
+<p>Beobachte die Teilchenbewegung und vergleiche die Stoffsysteme.</p>
+<div class="layout">
+<section class="card sim">
+<canvas id="canvas" width="460" height="430" aria-label="Animiertes Teilchenmodell"></canvas>
+<div id="legend" class="legend"></div>
+<div id="status" role="status"></div>
+<div class="buttons">
+<button id="pause">Pause</button>
+<button id="reset">Neu starten</button>
 </div>
-
+<small>Modell: Teilchengrößen, Mengen, Abstände und Zeitabläufe sind nicht maßstabsgetreu. Die blauen und grünen Kreise stehen jeweils für Moleküle.</small>
+</section>
+<section class="card controls">
+<div>
+<strong>1. Stoffsystem wählen</strong>
+<div class="buttons" id="modes">
+<button data-mode="water">Reines Wasser / Eis</button>
+<button data-mode="sugar">Zucker in Wasser</button>
+<button data-mode="sand">Sand in Wasser</button>
+<button data-mode="ink">Tinte (Diffusion)</button>
+<button data-mode="mix">Wasser + Alkohol</button>
+</div>
+</div>
+<div>
+<label for="temp"><strong>2. Temperatur: <span id="temperature">20 °C</span></strong></label>
+<input id="temp" type="range" min="5" max="85" value="20">
+<small id="tempNote"></small>
+</div>
+<div id="mixPanel" hidden>
+<strong>Zusammengießen und beobachten</strong>
+<button id="pour" class="primary">Zusammengießen</button>
+<small>Die gestrichelte Linie markiert das einfach addierte Ausgangsvolumen. Die spätere Volumenabnahme ist schematisch, kein berechneter Messwert.</small>
+</div>
+<div>
+<strong>3. Umrühren</strong>
+<div class="buttons"><button id="stir" class="green">Umrühren</button></div>
+<small>Gedrückt halten: dauerhaft rühren. Kurz klicken oder Enter: zwei Sekunden rühren.</small>
+</div>
+<div id="info" class="info"></div>
+<div class="note"><strong>Kein Vakuum:</strong> Beim Rühren wird das Zentrum nicht leergeräumt. Ein echter Strudel kann eine Vertiefung der Flüssigkeitsoberfläche bilden, in die Luft gelangt. Das ist kein Vakuum. Diese Ansicht stellt diese Oberflächenform nicht dar.</div>
+</section>
+</div>
+</main>
 <script>
-window.onerror = function(msg, url, line) {
-  document.getElementById('info').innerHTML = '<b style="color:red;">Fehler in Zeile ' + line + ':</b> ' + msg;
+const $=id=>document.getElementById(id);
+const canvas=$('canvas'),ctx=canvas.getContext('2d');
+const colors={w:'#38bdf8',a:'#10b981',s:'#f59e0b',i:'#9333ea',sand:'#92400e'};
+const names={w:'Wasser',a:'Alkohol (Ethanol)',s:'Zucker',i:'Farbstoff',sand:'Sandkorn'};
+const left=20,right=440,bottom=395,initialTop=70;
+let mode='mix',temp=20,particles=[],ice=0,phase='separate';
+let contraction=0,held=false,stirSeconds=0,paused=false,last=0,time=0;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function particle(x,y,type,locked=false){
+ const angle=rand(0,Math.PI*2);
+ return {x,y,type,locked,r:type==='a'?8:type==='sand'?9:type==='s'?7:5,
+ vx:Math.cos(angle),vy:Math.sin(angle),tx:x,ty:y,phase:rand(0,Math.PI*2)};
+}
+function waterGrid(){
+ for(let row=0;row<12;row++)for(let col=0;col<15;col++){
+  const x=32+col*28,y=90+row*26;
+  let p=particle(x+rand(-3,3),y+rand(-3,3),'w');
+  p.tx=x;p.ty=y;
+  if(mode==='sugar')p.y=90+row*16;
+  particles.push(p);
+ }
+}
+function init(){
+ particles=[];ice=0;contraction=0;held=false;stirSeconds=0;time=0;
+ phase=mode==='mix'?'separate':'running';
+ if(mode==='mix'){
+  // Getrennte Gefäße: Die Teilchen werden beim Gießen weiterverwendet.
+  for(let row=0;row<10;row++)for(let col=0;col<10;col++)
+   particles.push(particle(44+col*15,229+row*16,'w'));
+  for(let row=0;row<7;row++)for(let col=0;col<8;col++)
+   particles.push(particle(264+col*21,242+row*23,'a'));
+ }else{
+  waterGrid();
+  if(mode==='sugar')for(let row=0;row<4;row++)for(let col=0;col<7;col++)
+   particles.push(particle(175+col*16,319+row*17,'s',true));
+  if(mode==='sand')for(let j=0;j<24;j++)
+   particles.push(particle(40+(j%12)*33,365+Math.floor(j/12)*19,'sand'));
+  if(mode==='ink')for(let j=0;j<32;j++)
+   particles.push(particle(225+rand(-25,25),125+rand(-25,25),'i'));
+ }
+ $('pour').disabled=false;
+ updateText();
+}
+function setMode(m){
+ mode=m;
+ if(m!=='water'&&temp<5)temp=5;
+ $('temp').min=m==='water'?-15:5;
+ $('temp').value=temp;
+ $('mixPanel').hidden=m!=='mix';
+ document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+ init();
+}
+function updateText(){
+ $('temperature').textContent=temp+' °C';
+ $('tempNote').textContent=mode==='water'
+ ?'Unter 0 °C entsteht im vereinfachten Modell Eis, über 0 °C schmilzt es. Bei genau 0 °C bleibt der erreichte Zustand erhalten.'
+ :'Das Gefrieren von Gemischen wird nicht modelliert. Deshalb reicht dieser Regler hier von 5 bis 85 °C.';
+ const texts={
+ water:'<strong>Wasser und Eis:</strong> Flüssige Wasserteilchen bewegen sich ungeordnet. Im Eis schwingen sie um feste Plätze. Die geordnete Anordnung ist nur ein Schema, kein wirklichkeitsgetreues Eisgitter. Die Volumenzunahme beim Gefrieren wird hier nicht gezeigt.',
+ sugar:'<strong>Lösung:</strong> An der Kristalloberfläche können sich einzelne Zuckerteilchen herauslösen und im Wasser verteilen. Der Zucker bleibt vorhanden.',
+ sand:'<strong>Suspension:</strong> Die braunen Objekte stehen für ganze Sandkörner, nicht für einzelne Moleküle. Sie werden beim Rühren aufgewirbelt und sinken danach wieder ab. Die Größenverhältnisse sind stark vereinfacht.',
+ ink:'<strong>Diffusion:</strong> Die ungeordnete Eigenbewegung verteilt Farbstoffteilchen auch ohne Umrühren. Tinte ist hier vereinfacht als gelöster Farbstoff dargestellt.',
+ mix:'<strong>Volumenabnahme beim Mischen:</strong> Wasser- und Alkoholmoleküle ordnen sich durch ihre gegenseitigen Anziehungskräfte anders an. Das Gemisch benötigt weniger Raum als die beiden Flüssigkeiten vorher zusammen. <strong>Teilchenzahl und Teilchengröße bleiben erhalten.</strong> Die Abnahme wird hier vorgegeben, nicht aus Molekülkräften berechnet. Ihr tatsächlicher Wert hängt unter anderem von Mischungsverhältnis und Temperatur ab.'
+ };
+ $('info').innerHTML=texts[mode];
+ const extra={sugar:'s',sand:'sand',ink:'i',mix:'a'}[mode];
+ $('legend').innerHTML=['w',...(extra?[extra]:[])].map(t=>'<span><i class="dot" style="background:'+colors[t]+'"></i>'+names[t]+'</span>').join('');
+}
+$('modes').onclick=e=>{if(e.target.dataset.mode)setMode(e.target.dataset.mode)};
+$('temp').oninput=function(){temp=+this.value;updateText()};
+$('reset').onclick=init;
+$('pause').onclick=()=>{paused=!paused;$('pause').textContent=paused?'Weiter':'Pause'};
+$('pour').onclick=()=>{
+ if(phase!=='separate')return;
+ // Dasselbe Teilcheninventar wird in das gemeinsame Gefäß übertragen.
+ let wi=0,ai=0;
+ for(const p of particles){
+  if(p.type==='w'){
+   p.x=35+(wi%10)*42;p.y=237+Math.floor(wi/10)*15;wi++;
+  }else{
+   p.x=42+(ai%8)*52;p.y=87+Math.floor(ai/8)*20;ai++;
+  }
+ }
+ phase='mixing';$('pour').disabled=true;
 };
-
-var c = document.getElementById('c');
-var ctx = c.getContext('2d');
-var mode = 'sugar';
-var temp = 20;
-var parts = [];
-var stir = 0;
-var waterLevel = 50;
-
-document.getElementById('b-sugar').onclick = function() { setMode('sugar'); };
-document.getElementById('b-sand').onclick = function() { setMode('sand'); };
-document.getElementById('b-ink').onclick = function() { setMode('ink'); };
-document.getElementById('b-mix').onclick = function() { setMode('mix'); };
-document.getElementById('b-stir').onclick = function() { stir = 55; };
-document.getElementById('b-reset').onclick = function() { init(); };
-document.getElementById('temp').oninput = function() {
-  temp = Number(this.value);
-  document.getElementById('tVal').innerText = temp + ' Grad C';
+const stir=$('stir');
+stir.onpointerdown=e=>{
+ if(stir.disabled)return;
+ held=true;stirSeconds=2;stir.setPointerCapture(e.pointerId);
 };
-
-function setMode(m) {
-  mode = m;
-  document.getElementById('b-sugar').className = (m === 'sugar') ? 'active' : '';
-  document.getElementById('b-sand').className = (m === 'sand') ? 'active' : '';
-  document.getElementById('b-ink').className = (m === 'ink') ? 'active' : '';
-  document.getElementById('b-mix').className = (m === 'mix') ? 'active' : '';
-  init();
-}
-
-function rand(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
-function addPart(x, y, type, locked) {
-  var r = 6, col = '#38bdf8', m = 1;
-  if (type === 's') { r = 8; col = '#f59e0b'; m = 2.5; }
-  if (type === 'i') { r = 6; col = '#9333ea'; m = 1.2; }
-  if (type === 'a') { r = 11; col = '#10b981'; m = 2; }
-  if (type === 'sand') { r = 10; col = '#92400e'; m = 6; }
-  var ang = Math.random() * 6.28;
-  var spd = (type === 'sand') ? 0 : (0.5 + temp / 25) / Math.sqrt(m);
-  parts.push({ x: x, y: y, type: type, locked: locked, r: r, col: col, m: m, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd });
-}
-
-function init() {
-  parts = [];
-  stir = 0;
-  waterLevel = 50;
-  if (mode === 'sugar') {
-    for (var i = 0; i < 180; i++) { addPart(rand(10, 410), rand(60, 240), 'w', false); }
-    for (var r = 0; r < 5; r++) {
-      for (var col = 0; col < 7; col++) {
-        addPart(155 + col * 18, 280 + r * 18, 's', true);
-      }
-    }
-  } else if (mode === 'sand') {
-    for (var i = 0; i < 180; i++) { addPart(rand(10, 410), rand(60, 310), 'w', false); }
-    for (var i = 0; i < 28; i++) { addPart(rand(40, 380), rand(335, 368), 'sand', false); }
-  } else if (mode === 'ink') {
-    for (var i = 0; i < 200; i++) { addPart(rand(10, 410), rand(60, 370), 'w', false); }
-    for (var i = 0; i < 45; i++) { addPart(210 + rand(-25, 25), 90 + rand(-25, 25), 'i', false); }
-  } else if (mode === 'mix') {
-    waterLevel = 40;
-    for (var i = 0; i < 110; i++) { addPart(rand(10, 410), rand(220, 370), 'w', false); }
-    for (var i = 0; i < 70; i++) { addPart(rand(10, 410), rand(50, 200), 'a', false); }
+stir.onpointerup=()=>held=false;
+stir.onpointercancel=()=>held=false;
+stir.onlostpointercapture=()=>held=false;
+stir.onclick=()=>{if(!stir.disabled)stirSeconds=Math.max(stirSeconds,2)};
+window.addEventListener('blur',()=>held=false);
+function surface(){return initialTop+(mode==='mix'&&phase!=='separate'?contraction*27:0)}
+function update(dt){
+ time+=dt;
+ if(!held)stirSeconds=Math.max(0,stirSeconds-dt);
+ if(mode==='water'){
+  if(temp<0)ice=clamp(ice+dt*(.025+Math.abs(temp)*.008),0,1);
+  if(temp>0)ice=clamp(ice-dt*(.04+temp*.005),0,1);
+ }
+ const frozen=mode==='water'&&ice>.001;
+ const separate=mode==='mix'&&phase==='separate';
+ stir.disabled=frozen||separate;
+ if(stir.disabled){held=false;stirSeconds=0}
+ const stirring=(held||stirSeconds>0)&&!stir.disabled;
+ if(mode==='mix'&&!separate){
+  // Zeitlich vorgegebener Demonstrationsverlauf, keine physikalische Berechnung.
+  contraction=Math.min(1,contraction+dt*(stirring?.095:.025));
+ }
+ const top=surface(),s=dt*60;
+ if(!separate){
+  for(const p of particles){
+   if(p.locked)continue;
+   if(frozen){
+    const k=1-Math.exp(-dt*(.6+ice*4));
+    const amplitude=.5+(temp+15)/40;
+    p.x+=(p.tx+Math.sin(time*12+p.phase)*amplitude-p.x)*k;
+    p.y+=(p.ty+Math.cos(time*13+p.phase)*amplitude-p.y)*k;
+    continue;
+   }
+   if(p.type==='sand'){
+    if(stirring){p.vx+=rand(-.5,.5)*s;p.vy-=.32*s}
+    else{p.vy+=.13*s;p.vx*=Math.pow(.94,s)}
+    p.vy=clamp(p.vy,-3,3);
+    p.x+=p.vx*s;p.y+=p.vy*s;
+   }else{
+    const angle=Math.atan2(p.vy,p.vx)+rand(-.22,.22)*Math.sqrt(s);
+    p.vx=Math.cos(angle);p.vy=Math.sin(angle);
+    const speed=(33+temp*.65)*(p.type==='a'?.8:1);
+    p.x+=p.vx*speed*dt;p.y+=p.vy*speed*dt;
+   }
+   if(stirring){
+    // Strömung ohne radiale Auswärtskraft; das Zentrum wird nicht leergeräumt.
+    const x=clamp((p.x-left)/(right-left),0,1);
+    const y=clamp((p.y-top)/(bottom-top),0,1);
+    p.x+=90*Math.sin(Math.PI*x)*Math.cos(Math.PI*y)*dt;
+    p.y-=90*(bottom-top)/(right-left)*Math.cos(Math.PI*x)*Math.sin(Math.PI*y)*dt;
+   }
   }
-  updateText();
-}
-
-function step() {
-  ctx.clearRect(0, 0, 420, 380);
-  if (stir > 0) { stir--; }
-  if (mode === 'mix' && waterLevel < 62) { waterLevel += 0.03; }
-
-  ctx.beginPath();
-  ctx.moveTo(0, waterLevel);
-  ctx.lineTo(420, waterLevel);
-  ctx.strokeStyle = '#0284c7';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  for (var i = 0; i < parts.length; i++) {
-    var p = parts[i];
-    if (p.locked) {
-      p.x += rand(-0.3, 0.3);
-      p.y += rand(-0.3, 0.3);
-    } else if (p.type === 'sand') {
-      if (stir > 0) {
-        p.vx += rand(-0.8, 0.8);
-        p.vy -= rand(0.2, 0.9);
-      } else {
-        p.vy += 0.18;
-        p.vx *= 0.92;
-      }
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < p.r) { p.x = p.r; p.vx *= -0.5; }
-      if (p.x > 420 - p.r) { p.x = 420 - p.r; p.vx *= -0.5; }
-      if (p.y < waterLevel + p.r) { p.y = waterLevel + p.r; p.vy *= -0.5; }
-      if (p.y > 380 - p.r) { p.y = 380 - p.r; p.vy = 0; p.vx *= 0.7; }
-    } else {
-      var spd = (0.5 + temp / 25) / Math.sqrt(p.m);
-      var cur = Math.hypot(p.vx, p.vy) || 1;
-      p.vx = (p.vx / cur) * spd;
-      p.vy = (p.vy / cur) * spd;
-      if (stir > 0) {
-        p.vx += -(p.y - 200) * 0.02;
-        p.vy += (p.x - 210) * 0.02;
-      }
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < p.r) { p.x = p.r; p.vx *= -1; }
-      if (p.x > 420 - p.r) { p.x = 420 - p.r; p.vx *= -1; }
-      if (p.y < waterLevel + p.r) { p.y = waterLevel + p.r; p.vy *= -1; }
-      if (p.y > 380 - p.r) { p.y = 380 - p.r; p.vy *= -1; }
-    }
-
-    for (var j = i + 1; j < parts.length; j++) {
-      var q = parts[j];
-      var dx = q.x - p.x;
-      var dy = q.y - p.y;
-      var d = Math.hypot(dx, dy);
-      var minD = p.r + q.r;
-
-      if (d < minD && d > 0) {
-        var chance = 0.02 + temp / 1200 + (stir > 0 ? 0.1 : 0);
-        if (p.locked && q.type === 'w' && Math.random() < chance) { p.locked = false; }
-        if (q.locked && p.type === 'w' && Math.random() < chance) { q.locked = false; }
-
-        if (p.type === 'sand' && q.type === 'sand') {
-          var nx = dx / d, ny = dy / d, ov = (minD - d) * 0.5;
-          p.x -= nx * ov; p.y -= ny * ov;
-          q.x += nx * ov; q.y += ny * ov;
-        } else if (!p.locked && !q.locked && p.type !== 'sand' && q.type !== 'sand') {
-          var nx = dx / d, ny = dy / d, ov = (minD - d) * 0.5;
-          p.x -= nx * ov; p.y -= ny * ov;
-          q.x += nx * ov; q.y += ny * ov;
-          var tx = p.vx; p.vx = q.vx; q.vx = tx;
-          var ty = p.vy; p.vy = q.vy; q.vy = ty;
-        } else {
-          if (!p.locked && p.type !== 'sand') { p.vx *= -1; p.vy *= -1; }
-          if (!q.locked && q.type !== 'sand') { q.vx *= -1; q.vy *= -1; }
-        }
-      }
-    }
-
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.r, 0, 6.28);
-    ctx.fillStyle = p.col;
-    ctx.fill();
-
-    if (p.type === 'sand') {
-      ctx.fillStyle = '#451a03';
-      ctx.fillRect(p.x - 3, p.y - 2, 2, 2);
-      ctx.fillRect(p.x + 2, p.y + 1, 2, 2);
-      ctx.fillRect(p.x - 1, p.y + 3, 2, 2);
-    }
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.stroke();
+  if(!frozen){
+   for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+    const p=particles[i],q=particles[j],dx=q.x-p.x,dy=q.y-p.y;
+    const d=Math.hypot(dx,dy),min=p.r+q.r;
+    if(d>=min||d<.001)continue;
+    const chance=1-Math.exp(-(.55+temp*.025+(stirring?2:0))*dt);
+    if(p.locked&&q.type==='w'&&Math.random()<chance)p.locked=false;
+    if(q.locked&&p.type==='w'&&Math.random()<chance)q.locked=false;
+    const nx=dx/d,ny=dy/d,over=min-d;
+    if(!p.locked&&!q.locked){
+     p.x-=nx*over*.5;p.y-=ny*over*.5;
+     q.x+=nx*over*.5;q.y+=ny*over*.5;
+    }else if(!p.locked){p.x-=nx*over;p.y-=ny*over}
+    else if(!q.locked){q.x+=nx*over;q.y+=ny*over}
+    if(!p.locked&&p.type!=='sand'){p.vx=-nx;p.vy=-ny}
+    if(!q.locked&&q.type!=='sand'){q.vx=nx;q.vy=ny}
+   }
   }
-  requestAnimationFrame(step);
-}
-
-function updateText() {
-  var leg = document.getElementById('leg');
-  var info = document.getElementById('info');
-  if (mode === 'sugar') {
-    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser</span><span><i class="dot" style="background:#f59e0b"></i>Zucker</span>';
-    info.innerHTML = '<b>Loesung (homogenes Gemisch):</b> Wasserteilchen loesen einzelne Zuckerteilchen heraus.';
-  } else if (mode === 'sand') {
-    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser</span><span><i class="dot" style="background:#92400e"></i>Sandkorn</span>';
-    info.innerHTML = '<b>Suspension (heterogenes Gemisch):</b> Sandteilchen bleiben verbunden und sinken nach dem Umruehren ab.';
-  } else if (mode === 'ink') {
-    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser</span><span><i class="dot" style="background:#9333ea"></i>Farbstoff</span>';
-    info.innerHTML = '<b>Diffusion:</b> Durch ihre Eigenbewegung verteilen sich Farbstoffteilchen gleichmaessig im Wasser.';
-  } else {
-    leg.innerHTML = '<span><i class="dot" style="background:#38bdf8"></i>Wasser (klein)</span><span><i class="dot" style="background:#10b981"></i>Alkohol (gross)</span>';
-    info.innerHTML = '<b>Volumenkontraktion:</b> Kleine Wasserteilchen schieben sich in die Luecken zwischen den grossen Alkoholteilchen.';
+  for(const p of particles){
+   if(p.x<left+p.r||p.x>right-p.r)p.vx*=-1;
+   if(p.y<top+p.r||p.y>bottom-p.r)p.vy=p.type==='sand'?0:-p.vy;
+   p.x=clamp(p.x,left+p.r,right-p.r);
+   p.y=clamp(p.y,top+p.r,bottom-p.r);
   }
+ }
+ if(mode==='mix'){
+  $('status').textContent=separate
+   ?'Vor dem Mischen: zwei getrennte Flüssigkeiten. Klicke auf „Zusammengießen“.'
+   :contraction<1
+    ?'Das Gemisch benötigt allmählich weniger Raum. Gestrichelt: addiertes Ausgangsvolumen. Teilchenzahl unverändert: 100 Wasser, 56 Alkohol.'
+    :'Schematischer Endzustand: weniger Volumen, dieselben 100 Wasser- und 56 Alkoholteilchen. Die Teilchen bewegen sich weiter.';
+ }else{
+  $('status').textContent=frozen
+   ?(ice>.99?'Eis: Teilchen schwingen um feste Plätze.':'Schematischer Übergang zwischen flüssigem Wasser und Eis.')
+   :stirring?'Rühren: zusätzliche Strömung, kein Vakuum im Zentrum.':'Ungeordnete Teilchenbewegung – auch ohne Umrühren.';
+ }
 }
-
-init();
-step();
+function vessel(x,width,top,fill){
+ ctx.fillStyle=fill;ctx.fillRect(x,top,width,bottom-top);
+ ctx.strokeStyle='#475569';ctx.lineWidth=3;ctx.setLineDash([]);
+ ctx.beginPath();ctx.moveTo(x,top-20);ctx.lineTo(x,bottom);
+ ctx.lineTo(x+width,bottom);ctx.lineTo(x+width,top-20);ctx.stroke();
+ ctx.strokeStyle='#0284c7';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x+width,top);ctx.stroke();
+}
+function label(text,x,y,color='#334155'){
+ ctx.fillStyle=color;ctx.font='13px system-ui';ctx.fillText(text,x,y);
+}
+function draw(){
+ ctx.clearRect(0,0,460,430);
+ if(mode==='mix'&&phase==='separate'){
+  label('Vor dem Mischen',20,28);
+  vessel(25,175,215,'#e0f2fe');
+  vessel(250,185,215,'#dcfce7');
+  label('Wasser',80,190);label('Alkohol',305,190);
+ }else{
+  const top=surface();
+  vessel(left,right-left,top,mode==='water'&&ice>0?'#d5edfa':'#e0f2fe');
+  if(mode==='mix'){
+   label('Schematisch – nicht maßstabsgetreu',20,23);
+   ctx.strokeStyle='#9a3412';ctx.lineWidth=2;ctx.setLineDash([7,5]);
+   ctx.beginPath();ctx.moveTo(left,initialTop);ctx.lineTo(right,initialTop);ctx.stroke();
+   ctx.setLineDash([]);
+   label('Addiertes Ausgangsvolumen',28,initialTop-9,'#9a3412');
+   if(contraction>.15){
+    const x=427,y1=initialTop+2,y2=top-2;
+    ctx.strokeStyle='#9a3412';ctx.lineWidth=2;ctx.beginPath();
+    ctx.moveTo(x,y1);ctx.lineTo(x,y2);
+    ctx.moveTo(x-4,y1+4);ctx.lineTo(x,y1);ctx.lineTo(x+4,y1+4);
+    ctx.moveTo(x-4,y2-4);ctx.lineTo(x,y2);ctx.lineTo(x+4,y2-4);ctx.stroke();
+   }
+  }else if(mode==='water'&&ice>0){
+   label('Feste Plätze: vereinfachtes Schema eines Festkörpers',20,30);
+  }
+ }
+ for(const p of particles){
+  ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+  ctx.fillStyle=colors[p.type];ctx.fill();
+  ctx.strokeStyle='#0004';ctx.lineWidth=1;ctx.stroke();
+  if(p.type==='sand'){
+   ctx.fillStyle='#451a03';
+   ctx.fillRect(p.x-3,p.y-2,2,2);ctx.fillRect(p.x+2,p.y+2,2,2);
+  }
+ }
+ if(mode==='mix'&&phase!=='separate'){
+  label('Teilchenzahl und Teilchengröße bleiben erhalten.',20,420);
+ }
+}
+function frame(now){
+ const dt=last?Math.min((now-last)/1000,.035):1/60;last=now;
+ if(!paused)update(dt);
+ draw();requestAnimationFrame(frame);
+}
+setMode('mix');requestAnimationFrame(frame);
 </script>
 </body>
 </html>
